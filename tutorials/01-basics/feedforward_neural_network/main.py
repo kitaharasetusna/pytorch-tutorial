@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 
 
 # Device configuration
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda')
 
 # Hyper-parameters 
 input_size = 784
@@ -19,7 +19,7 @@ learning_rate = 0.001
 train_dataset = torchvision.datasets.MNIST(root='../../data', 
                                            train=True, 
                                            transform=transforms.ToTensor(),  
-                                           download=True)
+                                           download=False)
 
 test_dataset = torchvision.datasets.MNIST(root='../../data', 
                                           train=False, 
@@ -34,46 +34,38 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                           batch_size=batch_size, 
                                           shuffle=False)
 
-# Fully connected neural network with one hidden layer
-class NeuralNet(nn.Module):
+class NN(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
-        super(NeuralNet, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size) 
+        super(NN, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size, num_classes)  
-    
+        self.fc2 = nn.Linear(hidden_size, num_classes)
+
     def forward(self, x):
         out = self.fc1(x)
         out = self.relu(out)
         out = self.fc2(out)
         return out
 
-model = NeuralNet(input_size, hidden_size, num_classes).to(device)
-
-# Loss and optimizer
+model = NN(input_size, hidden_size, num_classes).to(device)
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-# Train the model
 total_step = len(train_loader)
 for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):  
-        # Move tensors to the configured device
-        images = images.reshape(-1, 28*28).to(device)
+    for i, (images, labels) in enumerate(train_loader):
+        images = images.reshape(-1, input_size).to(device)
         labels = labels.to(device)
-        
-        # Forward pass
         outputs = model(images)
+
         loss = criterion(outputs, labels)
-        
-        # Backward and optimize
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
-        if (i+1) % 100 == 0:
-            print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
-                   .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
+
+        if (i+1)%100==0:
+            print('epoch: [{}/{}], step:[{}/{}], loss: {}'.format(epoch+1, num_epochs,
+                                                        i+1, total_step, loss.item()))
 
 # Test the model
 # In test phase, we don't need to compute gradients (for memory efficiency)

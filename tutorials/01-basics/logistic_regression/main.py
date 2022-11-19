@@ -15,7 +15,7 @@ learning_rate = 0.001
 train_dataset = torchvision.datasets.MNIST(root='../../data', 
                                            train=True, 
                                            transform=transforms.ToTensor(),
-                                           download=True)
+                                           download=False)
 
 test_dataset = torchvision.datasets.MNIST(root='../../data', 
                                           train=False, 
@@ -30,47 +30,109 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                           batch_size=batch_size, 
                                           shuffle=False)
 
-# Logistic regression model
+
+
+iter_tr = iter(train_loader)
+image, label = iter_tr.__next__()
+
+print(image.shape)
+print(label.shape)
+
 model = nn.Linear(input_size, num_classes)
-
-# Loss and optimizer
-# nn.CrossEntropyLoss() computes softmax internally
-criterion = nn.CrossEntropyLoss()  
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)  
-
-# Train the model
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 total_step = len(train_loader)
 for epoch in range(num_epochs):
     for i, (images, labels) in enumerate(train_loader):
-        # Reshape images to (batch_size, input_size)
-        images = images.reshape(-1, input_size)
-        
-        # Forward pass
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-        
-        # Backward and optimize
+        inputs = images.reshape(-1, input_size)
+        outputs = model(inputs)
+        targets = labels
+
+        loss = criterion(outputs, targets)
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
-        if (i+1) % 100 == 0:
-            print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
-                   .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
 
-# Test the model
-# In test phase, we don't need to compute gradients (for memory efficiency)
-with torch.no_grad():
+        if (i+1)%100 == 0:
+            print('epoch: [{}/{}], step:[{}/{}], loss:{}'.
+                  format(epoch+1, num_epochs, i+1, total_step,loss.item()))
+
+with torch.no_grad() :
     correct = 0
     total = 0
-    for images, labels in test_loader:
+    for i, (images, labels) in enumerate(test_loader):
         images = images.reshape(-1, input_size)
         outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
+        _, predicted = torch.max(outputs, 1)
         total += labels.size(0)
-        correct += (predicted == labels).sum()
+        correct += (predicted==labels).sum()
 
-    print('Accuracy of the model on the 10000 test images: {} %'.format(100 * correct / total))
+    print('Accuracy of the model on the 10000 test images: {}%'.format(100*correct/total))
 
-# Save the model checkpoint
-torch.save(model.state_dict(), 'model.ckpt')
+
+torch.save(model, 'model.ckpt')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# # Logistic regression model
+# model = nn.Linear(input_size, num_classes)
+#
+# # Loss and optimizer
+# # nn.CrossEntropyLoss() computes softmax internally
+# criterion = nn.CrossEntropyLoss()
+# optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+#
+# # Train the model
+# total_step = len(train_loader)
+# for epoch in range(num_epochs):
+#     for i, (images, labels) in enumerate(train_loader):
+#         # Reshape images to (batch_size, input_size)
+#         images = images.reshape(-1, input_size)
+#
+#         # Forward pass
+#         outputs = model(images)
+#         loss = criterion(outputs, labels)
+#
+#         # Backward and optimize
+#         optimizer.zero_grad()
+#         loss.backward()
+#         optimizer.step()
+#
+#         if (i+1) % 100 == 0:
+#             print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
+#                    .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
+#
+# # Test the model
+# # In test phase, we don't need to compute gradients (for memory efficiency)
+# with torch.no_grad():
+#     correct = 0
+#     total = 0
+#     for images, labels in test_loader:
+#         images = images.reshape(-1, input_size)
+#         outputs = model(images)
+#         _, predicted = torch.max(outputs.data, 1)
+#         total += labels.size(0)
+#         correct += (predicted == labels).sum()
+#
+#     print('Accuracy of the model on the 10000 test images: {} %'.format(100 * correct / total))
+#
+# # Save the model checkpoint
+# torch.save(model.state_dict(), 'model.ckpt')
